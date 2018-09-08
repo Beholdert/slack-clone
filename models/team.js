@@ -13,13 +13,13 @@ export default (sequelize, DataTypes) => {
     }
   });
 
-  Team.associate = model => {
-    Team.belongsToMany(models.Team, {
+  Team.associate = models => {
+    Team.belongsToMany(models.User, {
       through: 'member',
       foreignKey: 'teamId'
     });
     Team.belongsTo(models.User, {
-      foreignKey: owner
+      foreignKey: 'owner'
     });
   };
 

@@ -13,7 +13,7 @@ export default (sequelize, DataTypes) => {
     }
   });
 
-  User.associate = model => {
+  User.associate = models => {
     User.belongsToMany(models.Team, {
       through: 'member',
       foreighKey: 'userId'
