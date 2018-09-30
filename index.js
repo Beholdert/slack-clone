@@ -6,6 +6,7 @@ import path from 'path';
 import { fileLoader, mergeTypes, mergeResolvers } from 'merge-graphql-schemas';
 import cors from 'cors';
 import models from './models';
+import jwt from 'jsonwebtoken';
 
 const typeDefs = mergeTypes(fileLoader(path.join(__dirname, './schema')));
 const resolvers = mergeResolvers(
@@ -20,24 +21,38 @@ const schema = makeExecutableSchema({
   resolvers
 });
 
+const addUser = (req, res, next) => {
+  const token = req.headers['x-token'];
+  if (token) {
+    try {
+      const payload = jwt.verify(token, SECRET);
+      console.log(payload);
+      const { user } = payload;
+
+      req.user = user;
+    } catch (error) {
+      
+    }
+  }
+  next();
+};
+
 const app = express();
 
 app.use(cors('*'));
-
+app.use(addUser);
 app.use(
   '/graphql',
   bodyParser.json(),
-  graphqlExpress({
+  graphqlExpress(req => ({
     schema,
     context: {
       models,
-      user: {
-        id: 1
-      },
+      user: req.user,
       SECRET,
       SECRET2
     }
-  })
+  }))
 );
 
 app.use('/graphiql', graphiqlExpress({ endpointURL: '/graphql' }));

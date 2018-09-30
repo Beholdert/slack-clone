@@ -1,40 +1,27 @@
 import bcrypt from 'bcrypt';
-import _ from 'lodash';
 
 import { tryLogin } from '../auth';
 
-const pickErrors = (err, models) => {
-  if (err instanceof models.sequelize.ValidationError) {
-    return err.errors.map(e => _.pick(e, ['path', 'message']));
-  }
-  return [{ path: 'database', message: 'something went wrong' }];
-};
+import pickErrors from '../pickErrors';
+import requireAuth from '../requireAuth';
+
 export default {
   Query: {
     getUser: (_, { id }, { models }) => models.User.findOne({ where: { id } }),
-    allUsers: (_, args, { models }) => models.User.findAll()
+    allUsers: (_, args, { models }) => models.User.findAll(),
+    checkAuth: (_, args, { user }) => {
+      if (!user || !user.id) {
+        return { ok: false };
+      }
+      return { ok: true };
+    }
   },
   Mutation: {
     login: (parent, { email, password }, { models, SECRET, SECRET2 }) =>
       tryLogin(email, password, models, SECRET, SECRET2),
-    register: async (_, { password, ...args }, { models }) => {
+    register: async (_, args, { models }) => {
       try {
-        if (password.length < 5 || password.length > 100) {
-          return {
-            ok: false,
-            errors: [
-              {
-                path: 'password',
-                message: 'Password must be between 5 to 100 characters long'
-              }
-            ]
-          };
-        }
-        const hashedPassword = await bcrypt.hash(password, 12);
-        const user = await models.User.create({
-          ...args,
-          password: hashedPassword
-        });
+        const user = await models.User.create(args);
         return {
           ok: true,
           user
