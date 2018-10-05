@@ -30,9 +30,7 @@ const addUser = (req, res, next) => {
       const { user } = payload;
 
       req.user = user;
-    } catch (error) {
-      
-    }
+    } catch (error) {}
   }
   next();
 };
